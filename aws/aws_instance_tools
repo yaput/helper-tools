@@ -1,0 +1,49 @@
+#!/bin/bash
+
+echo "################################################"
+echo "#            AWS Instance Tools                #"
+echo "################################################"
+echo "# 1. Get List of Instance IDs by Cluster       #"
+echo "# 2. SSM Portforwad to Instance by instnace ID #"
+echo "################################################"
+
+echo
+
+same_role=true
+
+while true
+do
+    echo "Enter aws role name:"
+    python /home/antoniusyanuarputra/python/awsroleviewer/main.py
+
+    echo
+
+    read aws_role
+
+    echo 
+    same_role=true
+    while $same_role
+    do
+        echo "Choose operation [1,2, 0 to change role]:"
+        read operation_number
+        while [[ ! $operation_number =~ ^[0-9]+$ ]]; do
+            echo "Choose correct operation [1,2]:"
+            read operation_number
+        done
+
+        case $operation_number in
+            1) echo "Enter cluster name:"
+            read cluster_name
+            awsudo -u $aws_role -- aws ec2 describe-instances --filters "Name=tag:Cluster,Values=$cluster_name" --query "Reservations[].Instances[].InstanceId"
+            ;;
+            2) echo "Enter instance ID:"
+            read instance_id
+            echo "Enter port number:"
+            read port_number
+            awsudo -u $aws_role -- aws ssm start-session --target $instance_id --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["'$port_number'"],"localPortNumber":["'$port_number'"]}'
+            ;;
+            0) same_role=false
+            ;;
+        esac
+    done
+done
