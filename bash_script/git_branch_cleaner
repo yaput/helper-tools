@@ -1,0 +1,18 @@
+#!/bin/bash
+
+current_timestamp=$(date +%s)
+MONTH=5
+limit=$(($MONTH*30*24*3600)) # convert to second
+git for-each-ref --sort=committerdate refs/heads/ --format='%(refname:short) %(committerdate:unix)' | \
+    while read entry
+    do
+        myarray=($entry)
+        branch_datetime=${myarray[1]}
+        delta_time=$(($current_timestamp-$branch_datetime))
+        if [ "$delta_time" -gt "$limit" ] 
+        then
+            echo "$(tput setaf 1)OLD BRANCH ${myarray[0]}"
+            eval "git branch -D ${myarray[0]}"
+        fi
+
+    done
